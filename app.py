@@ -1222,9 +1222,12 @@ elif page == "🎯 Prediksi Interaktif":
             opacity=0.25,
             name="Input",
         ))
-        fig.update_layout(**PLOTLY_LAYOUT, height=300,
-                          polar=dict(radialaxis=dict(range=[0, 100], showticklabels=False)),
-                          showlegend=False, margin=dict(l=40, r=40, t=30, b=30))
+        fig.update_layout(
+            **{**PLOTLY_LAYOUT, "margin": dict(l=40, r=40, t=30, b=30)},
+            height=300,
+            polar=dict(radialaxis=dict(range=[0, 100], showticklabels=False)),
+            showlegend=False,
+        )
         st.plotly_chart(fig, use_container_width=True)
 
 
