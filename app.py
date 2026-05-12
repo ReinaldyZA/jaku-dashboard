@@ -457,7 +457,12 @@ def load_and_process_data():
 
 @st.cache_resource(show_spinner=False)
 def train_models(_data):
-    """Train, tune, and evaluate RF, XGBoost, SVM."""
+    """
+    Train & evaluate RF, XGBoost, SVM dengan hyperparameter terbaik
+    yang sudah ditemukan melalui GridSearchCV sebelumnya (di notebook).
+    Pendekatan ini cocok untuk deployment: tuning dilakukan sekali saat
+    penelitian, lalu best params digunakan langsung di production.
+    """
     X_train = _data["X_train"]
     X_test = _data["X_test"]
     y_train = _data["y_train"]
@@ -468,42 +473,29 @@ def train_models(_data):
     fitur = _data["fitur"]
     skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
 
-    # ── Baseline ──
-    baselines = {}
-    for name, mdl, Xtr, Xte in [
-        ("Random Forest", RandomForestClassifier(random_state=42), X_train, X_test),
-        ("XGBoost", XGBClassifier(random_state=42, eval_metric="mlogloss", use_label_encoder=False), X_train, X_test),
-        ("SVM", SVC(random_state=42, kernel="rbf"), X_train_scaled, X_test_scaled),
-    ]:
-        mdl.fit(Xtr, y_train)
-        baselines[name] = accuracy_score(y_test, mdl.predict(Xte))
+    # ── Best hyperparameters dari GridSearchCV (hasil tuning di notebook) ──
+    rf_params = {
+        "n_estimators": 200, "max_depth": 20, "min_samples_split": 2,
+        "min_samples_leaf": 1, "max_features": "sqrt", "random_state": 42,
+    }
+    xgb_params = {
+        "n_estimators": 200, "max_depth": 5, "learning_rate": 0.1,
+        "subsample": 1.0, "colsample_bytree": 1.0,
+        "random_state": 42, "eval_metric": "mlogloss", "use_label_encoder": False,
+    }
+    svm_params = {
+        "C": 10, "gamma": "scale", "kernel": "rbf", "random_state": 42,
+    }
 
-    # ── Tuning (smaller grid for speed) ──
-    rf_grid = GridSearchCV(
-        RandomForestClassifier(random_state=42),
-        {"n_estimators": [100, 200, 300], "max_depth": [10, 20, None],
-         "min_samples_split": [2, 5], "min_samples_leaf": [1, 2], "max_features": ["sqrt", "log2"]},
-        cv=skf, scoring="accuracy", n_jobs=-1, verbose=0,
-    )
-    rf_grid.fit(X_train, y_train)
-    rf_best = rf_grid.best_estimator_
+    # ── Train dengan best params (langsung, tanpa GridSearchCV ulang) ──
+    rf_best = RandomForestClassifier(**rf_params)
+    rf_best.fit(X_train, y_train)
 
-    xgb_grid = GridSearchCV(
-        XGBClassifier(random_state=42, eval_metric="mlogloss", use_label_encoder=False),
-        {"n_estimators": [100, 200, 300], "max_depth": [3, 5, 7],
-         "learning_rate": [0.05, 0.1, 0.2], "subsample": [0.8, 1.0], "colsample_bytree": [0.8, 1.0]},
-        cv=skf, scoring="accuracy", n_jobs=-1, verbose=0,
-    )
-    xgb_grid.fit(X_train, y_train)
-    xgb_best = xgb_grid.best_estimator_
+    xgb_best = XGBClassifier(**xgb_params)
+    xgb_best.fit(X_train, y_train)
 
-    svm_grid = GridSearchCV(
-        SVC(random_state=42),
-        {"C": [0.1, 1, 10, 100], "gamma": ["scale", "auto", 0.01, 0.1], "kernel": ["rbf", "poly"]},
-        cv=skf, scoring="accuracy", n_jobs=-1, verbose=0,
-    )
-    svm_grid.fit(X_train_scaled, y_train)
-    svm_best = svm_grid.best_estimator_
+    svm_best = SVC(**svm_params)
+    svm_best.fit(X_train_scaled, y_train)
 
     # ── Predictions & evaluation ──
     models_best = {
@@ -513,11 +505,13 @@ def train_models(_data):
     }
     preds = {n: m.predict(X) for n, (m, X) in models_best.items()}
 
+    # ── Cross-validation (3-fold untuk speed, masih representatif) ──
+    cv_skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
     cv_results = {}
     cv_configs = {"Random Forest": (rf_best, X_train), "XGBoost": (xgb_best, X_train),
                   "SVM": (svm_best, X_train_scaled)}
     for name, (mdl, Xd) in cv_configs.items():
-        cv_results[name] = cross_val_score(mdl, Xd, y_train, cv=skf, scoring="accuracy")
+        cv_results[name] = cross_val_score(mdl, Xd, y_train, cv=cv_skf, scoring="accuracy", n_jobs=-1)
 
     comparison = []
     for name, y_pred in preds.items():
@@ -536,16 +530,20 @@ def train_models(_data):
     # ── Feature importances ──
     rf_imp = pd.Series(rf_best.feature_importances_, index=fitur)
     xgb_imp = pd.Series(xgb_best.feature_importances_, index=fitur)
-    perm = permutation_importance(svm_best, X_test_scaled, y_test, n_repeats=10, random_state=42)
+    perm = permutation_importance(svm_best, X_test_scaled, y_test, n_repeats=5, random_state=42, n_jobs=-1)
     svm_imp = pd.Series(perm.importances_mean, index=fitur)
 
     best_idx = comp_df["Test Accuracy"].idxmax()
     best_name = comp_df.loc[best_idx, "Model"]
 
+    # Sanitasi params untuk display (hapus key internal)
+    display_rf = {k: v for k, v in rf_params.items() if k != "random_state"}
+    display_xgb = {k: v for k, v in xgb_params.items() if k not in ["random_state", "eval_metric", "use_label_encoder"]}
+    display_svm = {k: v for k, v in svm_params.items() if k != "random_state"}
+
     return {
         "rf_best": rf_best, "xgb_best": xgb_best, "svm_best": svm_best,
-        "rf_params": rf_grid.best_params_, "xgb_params": xgb_grid.best_params_, "svm_params": svm_grid.best_params_,
-        "baselines": baselines,
+        "rf_params": display_rf, "xgb_params": display_xgb, "svm_params": display_svm,
         "predictions": preds,
         "cv_results": cv_results,
         "comp_df": comp_df,
