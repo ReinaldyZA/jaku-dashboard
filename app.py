@@ -857,13 +857,13 @@ elif page == "🔍 Eksplorasi Data":
         st.plotly_chart(fig, use_container_width=True)
 
     with tabs[5]:
-        st.markdown("#### Distribusi Kategori Kualitas Udara per Stasiun Pemantauan")
+        st.markdown("#### Peta Distribusi Kategori Kualitas Udara di DKI Jakarta")
         st.markdown(
-            '<div class="section-desc">Visualisasi sebaran kategori BAIK, SEDANG, dan TIDAK SEHAT pada 5 stasiun pemantauan kualitas udara DKI Jakarta.</div>',
+            '<div class="section-desc">Lokasi 5 stasiun pemantauan kualitas udara di DKI Jakarta, dengan warna marker sesuai kategori dominan masing-masing wilayah.</div>',
             unsafe_allow_html=True,
         )
 
-        # Mapping stasiun ke wilayah
+        # Mapping stasiun ke wilayah dan koordinat
         wilayah_map = {
             "DKI1 Bunderan HI": "Jakarta Pusat",
             "DKI2 Kelapa Gading": "Jakarta Utara",
@@ -871,6 +871,117 @@ elif page == "🔍 Eksplorasi Data":
             "DKI4 Lubang Buaya": "Jakarta Timur",
             "DKI5 Kebon Jeruk": "Jakarta Barat",
         }
+        koordinat_stasiun = {
+            "DKI1 Bunderan HI":    {"lat": -6.1924, "lon": 106.8232},
+            "DKI2 Kelapa Gading":  {"lat": -6.1565, "lon": 106.9056},
+            "DKI3 Jagakarsa":      {"lat": -6.3296, "lon": 106.8226},
+            "DKI4 Lubang Buaya":   {"lat": -6.2864, "lon": 106.9061},
+            "DKI5 Kebon Jeruk":    {"lat": -6.1881, "lon": 106.7567},
+        }
+
+        # Hitung kategori dominan dan distribusi per stasiun
+        map_data = []
+        for stasiun in data["df"]["stasiun"].unique():
+            if stasiun not in koordinat_stasiun:
+                continue
+            sub = data["df"][data["df"]["stasiun"] == stasiun]
+            kat_count = sub["kategori"].value_counts()
+            dom_kat = kat_count.idxmax()
+            total = int(kat_count.sum())
+            pct_baik = (kat_count.get("BAIK", 0) / total * 100)
+            pct_sedang = (kat_count.get("SEDANG", 0) / total * 100)
+            pct_tidaksehat = (kat_count.get("TIDAK SEHAT", 0) / total * 100)
+
+            map_data.append({
+                "stasiun": stasiun,
+                "wilayah": wilayah_map.get(stasiun, "—"),
+                "lat": koordinat_stasiun[stasiun]["lat"],
+                "lon": koordinat_stasiun[stasiun]["lon"],
+                "kategori_dominan": dom_kat,
+                "total": total,
+                "pct_baik": pct_baik,
+                "pct_sedang": pct_sedang,
+                "pct_tidaksehat": pct_tidaksehat,
+            })
+
+        map_df = pd.DataFrame(map_data)
+
+        # Peta interaktif Plotly (OpenStreetMap — tidak butuh API token)
+        fig_map = px.scatter_mapbox(
+            map_df,
+            lat="lat", lon="lon",
+            color="kategori_dominan",
+            size="total",
+            size_max=40,
+            color_discrete_map=COLORS,
+            category_orders={"kategori_dominan": ["BAIK", "SEDANG", "TIDAK SEHAT"]},
+            hover_name="wilayah",
+            hover_data={
+                "stasiun": True,
+                "kategori_dominan": True,
+                "total": ":,",
+                "pct_baik": ":.1f",
+                "pct_sedang": ":.1f",
+                "pct_tidaksehat": ":.1f",
+                "lat": False, "lon": False,
+            },
+            labels={
+                "kategori_dominan": "Kategori Dominan",
+                "total": "Total Pengamatan",
+                "pct_baik": "% BAIK",
+                "pct_sedang": "% SEDANG",
+                "pct_tidaksehat": "% TIDAK SEHAT",
+                "stasiun": "Stasiun",
+            },
+            zoom=10,
+            center={"lat": -6.230, "lon": 106.850},  # tengah DKI Jakarta
+        )
+        fig_map.update_layout(
+            mapbox_style="open-street-map",
+            height=520,
+            margin=dict(l=0, r=0, t=10, b=0),
+            legend=dict(
+                orientation="h", y=0.02, x=0.5, xanchor="center",
+                bgcolor="rgba(255,255,255,0.9)",
+                bordercolor="rgba(10,104,71,0.2)", borderwidth=1,
+                font=dict(size=12, family="Plus Jakarta Sans"),
+                title="",
+            ),
+        )
+        st.plotly_chart(fig_map, use_container_width=True)
+
+        # Quick stats per stasiun di bawah peta
+        st.markdown("#### Ringkasan per Wilayah")
+        stat_cols = st.columns(5)
+        for idx, row in map_df.sort_values("stasiun").reset_index(drop=True).iterrows():
+            with stat_cols[idx % 5]:
+                kat = row["kategori_dominan"]
+                bg_color = {"BAIK": "#DCFCE7", "SEDANG": "#FEF3C7", "TIDAK SEHAT": "#FEE2E2"}[kat]
+                text_color = {"BAIK": "#166534", "SEDANG": "#92400E", "TIDAK SEHAT": "#991B1B"}[kat]
+                st.markdown(f"""
+                <div style="background:{bg_color}; border-radius:12px; padding:14px 12px;
+                            text-align:center; height:130px; display:flex; flex-direction:column;
+                            justify-content:center; border:1px solid {text_color}33;">
+                    <div style="font-size:0.7rem; color:{text_color}; opacity:0.7;
+                                font-weight:600; text-transform:uppercase; letter-spacing:0.04em;">
+                        {row['wilayah']}
+                    </div>
+                    <div style="font-size:0.78rem; font-weight:500; color:{text_color};
+                                margin-top:2px;">{row['stasiun']}</div>
+                    <div style="font-size:1rem; font-weight:700; color:{text_color};
+                                margin-top:6px; letter-spacing:-0.01em;">{kat}</div>
+                    <div style="font-size:0.7rem; color:{text_color}; opacity:0.7; margin-top:2px;">
+                        {row['total']:,} pengamatan
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+
+        st.markdown("<br>", unsafe_allow_html=True)
+        st.markdown("#### Distribusi Kategori Kualitas Udara per Stasiun Pemantauan")
+        st.markdown(
+            '<div class="section-desc">Visualisasi sebaran kategori BAIK, SEDANG, dan TIDAK SEHAT pada 5 stasiun pemantauan kualitas udara DKI Jakarta.</div>',
+            unsafe_allow_html=True,
+        )
 
         # Hitung distribusi kategori per stasiun
         stasiun_dist = (
@@ -934,7 +1045,7 @@ elif page == "🔍 Eksplorasi Data":
             return ""
 
         st.dataframe(
-            dominan_df.style.applymap(color_kategori, subset=["Kategori Dominan"]),
+            dominan_df.style.map(color_kategori, subset=["Kategori Dominan"]),
             use_container_width=True,
             height=240,
             hide_index=True,
