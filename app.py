@@ -863,7 +863,7 @@ elif page == "🔍 Eksplorasi Data":
             return ""
 
         st.dataframe(
-            dominan_df.style.applymap(color_kategori, subset=["Kategori Dominan"]),
+            dominan_df.style.map(color_kategori, subset=["Kategori Dominan"]),
             use_container_width=True,
             height=240,
             hide_index=True,
