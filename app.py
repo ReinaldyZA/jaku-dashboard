@@ -359,6 +359,56 @@ MODEL_COLORS = {
 POLUTAN_COLORS = px.colors.qualitative.Set2
 
 
+# ─── UCD HELPER FUNCTIONS ──────────────────────────────────────
+# Diterapkan untuk mendukung 8 Golden Rules of UI Design (Shneiderman)
+# dan prinsip User-Centered Design (Nielsen Usability Heuristics)
+
+def breadcrumb(icon, page_name):
+    """Rule 4: Design dialogs to yield closure — selalu tunjukkan lokasi user."""
+    st.markdown(f"""
+    <div style="font-size:0.78rem; color:#6B8A73; margin-bottom:12px; font-weight:500;">
+        <span style="opacity:0.6;">🏠 JakU Dashboard</span>
+        <span style="margin:0 6px; opacity:0.4;">›</span>
+        <span style="color:#0A6847;">{icon} {page_name}</span>
+    </div>
+    """, unsafe_allow_html=True)
+
+
+def how_to_use(title, steps):
+    """Rule 2: Universal usability — bantu pengguna pemula."""
+    with st.expander(f"❓ {title}", expanded=False):
+        for i, step in enumerate(steps, 1):
+            st.markdown(f"**{i}.** {step}")
+
+
+def info_tooltip(label, tooltip_text):
+    """Rule 8: Reduce memory load — tooltip untuk istilah teknis."""
+    return f'{label} <span title="{tooltip_text}" style="cursor:help; color:#0A6847;">ⓘ</span>'
+
+
+def insight_box(text, icon="💡"):
+    """Rule 4: Closure — kesimpulan analisis di akhir."""
+    st.markdown(f"""
+    <div style="background:linear-gradient(135deg, #F0F9FF, #DBEAFE);
+                border-left:4px solid #3B82F6; border-radius:0 12px 12px 0;
+                padding:14px 18px; margin:12px 0; font-size:0.88rem;
+                color:#1E40AF; line-height:1.6;">
+        <strong>{icon} Insight:</strong> {text}
+    </div>
+    """, unsafe_allow_html=True)
+
+
+def app_footer():
+    """Rule 4: Closure — atribusi & versi di akhir."""
+    st.markdown("""
+    <hr style="border:none; border-top:1px solid rgba(10,104,71,0.08); margin:32px 0 16px 0;">
+    <div style="text-align:center; font-size:0.72rem; color:#9CA3AF; padding:8px 0 16px 0; line-height:1.6;">
+        <strong style="color:#6B8A73;">JakU Dashboard v1.0</strong> · Klasifikasi Kualitas Udara DKI Jakarta<br>
+        Dibangun dengan Streamlit · Metodologi CRISP-DM · Desain UCD & 8 Golden Rules
+    </div>
+    """, unsafe_allow_html=True)
+
+
 # ─── DATA LOADING & PROCESSING ────────────────────────────────
 @st.cache_data(show_spinner=False)
 def load_and_process_data():
@@ -594,6 +644,8 @@ with st.spinner("Melatih model... Harap tunggu sebentar."):
 # PAGE: BERANDA
 # ════════════════════════════════════════════════════════════════
 if page == "🏠 Beranda":
+    breadcrumb("🏠", "Beranda")
+
     st.markdown("""
     <div class="hero-container">
         <div class="hero-title">🌬️ JakU Dashboard</div>
@@ -603,6 +655,15 @@ if page == "🏠 Beranda":
         </div>
     </div>
     """, unsafe_allow_html=True)
+
+    # Welcome banner with quick-start guidance — Rule 2 (Universal Usability)
+    how_to_use("Cara menggunakan dashboard ini", [
+        "Lihat **ringkasan dataset** dan **model terbaik** di halaman Beranda ini.",
+        "Buka **Eksplorasi Data** untuk memahami karakteristik dataset ISPU.",
+        "Buka **Persiapan Data** untuk melihat tahap cleaning dan preprocessing.",
+        "Buka **Pemodelan & Evaluasi** untuk membandingkan performa 3 algoritma.",
+        "Buka **Prediksi Interaktif** untuk mencoba memprediksi kualitas udara dari nilai polutan.",
+    ])
 
     # KPI cards
     best = models["comp_df"].loc[models["comp_df"]["Test Accuracy"].idxmax()]
@@ -707,8 +768,18 @@ if page == "🏠 Beranda":
 # PAGE: EKSPLORASI DATA
 # ════════════════════════════════════════════════════════════════
 elif page == "🔍 Eksplorasi Data":
+    breadcrumb("🔍", "Eksplorasi Data")
     st.markdown('<div class="section-header">Eksplorasi Data (Data Understanding)</div>', unsafe_allow_html=True)
     st.markdown('<div class="section-desc">Tahap ini bertujuan memahami karakteristik dataset ISPU DKI Jakarta sebelum dilakukan pemrosesan lebih lanjut.</div>', unsafe_allow_html=True)
+
+    how_to_use("Apa yang bisa dilakukan di halaman ini?", [
+        "**Statistik Deskriptif** — lihat ringkasan numerik (mean, std, min, max) tiap polutan.",
+        "**Distribusi Fitur** — pilih satu polutan untuk melihat histogram distribusinya.",
+        "**Boxplot** — identifikasi outlier dan sebaran nilai per polutan.",
+        "**Korelasi** — pahami hubungan antar 6 parameter polutan.",
+        "**Missing Values** — cek jumlah data kosong sebelum imputasi.",
+        "**Distribusi per Stasiun** — lihat sebaran kategori di 5 stasiun pemantauan DKI Jakarta.",
+    ])
 
     tabs = st.tabs(["📊 Statistik Deskriptif", "📈 Distribusi Fitur", "📦 Boxplot", "🔥 Korelasi", "❓ Missing Values", "🗺️ Distribusi per Stasiun"])
 
@@ -863,7 +934,7 @@ elif page == "🔍 Eksplorasi Data":
             return ""
 
         st.dataframe(
-            dominan_df.style.map(color_kategori, subset=["Kategori Dominan"]),
+            dominan_df.style.applymap(color_kategori, subset=["Kategori Dominan"]),
             use_container_width=True,
             height=240,
             hide_index=True,
@@ -885,8 +956,16 @@ elif page == "🔍 Eksplorasi Data":
 # PAGE: PERSIAPAN DATA
 # ════════════════════════════════════════════════════════════════
 elif page == "🧹 Persiapan Data":
+    breadcrumb("🧹", "Persiapan Data")
     st.markdown('<div class="section-header">Persiapan Data (Data Preparation)</div>', unsafe_allow_html=True)
     st.markdown('<div class="section-desc">Tahap ini mencakup cleaning, imputasi, penghapusan outlier, encoding, dan feature scaling sesuai pipeline CRISP-DM.</div>', unsafe_allow_html=True)
+
+    how_to_use("Mengapa tahap ini penting?", [
+        "**Data Cleaning** menghapus baris yang tidak valid agar model belajar dari data berkualitas.",
+        "**Imputasi median** mengisi nilai kosong tanpa terpengaruh outlier (lebih robust dari mean).",
+        "**Outlier removal IQR** menghapus nilai ekstrem yang bisa mengacaukan pelatihan model.",
+        "**Encoding & scaling** mengubah data ke format yang bisa diproses oleh algoritma ML.",
+    ])
 
     tabs = st.tabs(["🧼 Data Cleaning", "🩹 Imputasi", "📐 Outlier Removal", "🏷️ Encoding & Split"])
 
@@ -983,8 +1062,18 @@ elif page == "🧹 Persiapan Data":
 # PAGE: PEMODELAN & EVALUASI
 # ════════════════════════════════════════════════════════════════
 elif page == "🤖 Pemodelan & Evaluasi":
+    breadcrumb("🤖", "Pemodelan & Evaluasi")
     st.markdown('<div class="section-header">Pemodelan & Evaluasi</div>', unsafe_allow_html=True)
     st.markdown('<div class="section-desc">Tiga algoritma dibandingkan: Random Forest, XGBoost, dan SVM. Masing-masing di-tuning dengan GridSearchCV dan dievaluasi secara menyeluruh.</div>', unsafe_allow_html=True)
+
+    how_to_use("Bagaimana membaca hasil evaluasi?", [
+        "**Accuracy** = persentase prediksi yang benar dari seluruh data uji.",
+        "**Precision** = dari yang diprediksi positif, berapa yang benar-benar positif.",
+        "**Recall** = dari yang sebenarnya positif, berapa yang berhasil terdeteksi.",
+        "**F1-Score** = harmonic mean precision dan recall (lebih seimbang dari accuracy).",
+        "**Confusion Matrix** menunjukkan rincian prediksi per kelas — diagonal = benar.",
+        "**Cross-Validation** = evaluasi pada 5 subset data untuk memastikan model konsisten.",
+    ])
 
     tabs = st.tabs(["⚙️ Hyperparameter", "📊 Confusion Matrix", "📋 Classification Report",
                      "🔄 Cross-Validation", "🏆 Feature Importance", "📈 Perbandingan"])
@@ -1125,42 +1214,115 @@ elif page == "🤖 Pemodelan & Evaluasi":
 # PAGE: PREDIKSI INTERAKTIF
 # ════════════════════════════════════════════════════════════════
 elif page == "🎯 Prediksi Interaktif":
+    breadcrumb("🎯", "Prediksi Interaktif")
     st.markdown('<div class="section-header">Prediksi Kualitas Udara</div>', unsafe_allow_html=True)
     st.markdown('<div class="section-desc">Masukkan nilai 6 parameter polutan untuk mendapatkan klasifikasi kualitas udara secara real-time. Anda dapat memilih model yang digunakan.</div>', unsafe_allow_html=True)
+
+    how_to_use("Cara melakukan prediksi", [
+        "Pilih **model klasifikasi** dari dropdown (XGBoost direkomendasikan karena akurasi tertinggi).",
+        "Atur nilai 6 parameter polutan dengan **slider**. Nilai default sudah diset pada rata-rata dataset.",
+        "Atau klik salah satu **preset skenario** untuk mengisi nilai otomatis (bersih / sedang / buruk).",
+        "Lihat **hasil prediksi** dan **rekomendasi aktivitas** di panel kanan.",
+        "Klik **Reset** untuk mengembalikan semua slider ke nilai default.",
+    ])
+
+    # ── Preset values (Rule 8: reduce memory load — referensi nilai realistis) ──
+    PRESETS = {
+        "baik":        {"pm10": 25, "pm25": 30, "so2": 15, "co": 5,  "o3": 10, "no2": 15},
+        "sedang":      {"pm10": 60, "pm25": 75, "so2": 40, "co": 18, "o3": 25, "no2": 35},
+        "tidaksehat":  {"pm10": 120,"pm25": 130,"so2": 75, "co": 45, "o3": 65, "no2": 110},
+        "default":     {"pm10": 50, "pm25": 70, "so2": 35, "co": 15, "o3": 22, "no2": 25},
+    }
+
+    # ── Inisialisasi session_state (Rule 7: keep user in control) ──
+    if "preset_vals" not in st.session_state:
+        st.session_state["preset_vals"] = PRESETS["default"].copy()
+
+    # ── Reference values dari dataset (Rule 5: error prevention) ──
+    df_ref = data["df"]
+    fitur_ref = {
+        "pm_sepuluh": "PM10", "pm_duakomalima": "PM2.5", "sulfur_dioksida": "SO₂",
+        "karbon_monoksida": "CO", "ozon": "O₃", "nitrogen_dioksida": "NO₂",
+    }
+    refs = {
+        fitur_ref[c]: {"mean": df_ref[c].mean(), "median": df_ref[c].median(),
+                       "min": df_ref[c].min(), "max": df_ref[c].max()}
+        for c in fitur_ref
+    }
 
     col_input, col_result = st.columns([3, 2])
 
     with col_input:
         st.markdown('<div class="info-card"><h4>📝 Input Parameter Polutan</h4>', unsafe_allow_html=True)
 
-        model_choice = st.selectbox("Pilih Model Klasifikasi:", ["XGBoost (Rekomendasi)", "Random Forest", "SVM"])
+        model_choice = st.selectbox(
+            "Pilih Model Klasifikasi:",
+            ["XGBoost (Rekomendasi)", "Random Forest", "SVM"],
+            help="XGBoost direkomendasikan karena memiliki akurasi tertinggi pada data uji.",
+        )
 
+        # ── Sliders dengan referensi real-world (Rule 8: memory load) ──
         c1, c2 = st.columns(2)
         with c1:
-            pm10 = st.slider("PM10", 0.0, 200.0, 50.0, 1.0, help="Particulate Matter ≤ 10μm")
-            pm25 = st.slider("PM2.5", 0.0, 200.0, 70.0, 1.0, help="Particulate Matter ≤ 2.5μm")
-            so2 = st.slider("SO₂", 0.0, 120.0, 35.0, 1.0, help="Sulfur Dioksida")
+            pm10 = st.slider(
+                "PM10 (μg/m³)", 0.0, 200.0, float(st.session_state["preset_vals"]["pm10"]), 1.0,
+                help=f"Particulate Matter ≤ 10μm · Rata-rata dataset: {refs['PM10']['mean']:.1f} · Median: {refs['PM10']['median']:.1f}",
+                key="sl_pm10",
+            )
+            pm25 = st.slider(
+                "PM2.5 (μg/m³)", 0.0, 200.0, float(st.session_state["preset_vals"]["pm25"]), 1.0,
+                help=f"Particulate Matter ≤ 2.5μm · Rata-rata dataset: {refs['PM2.5']['mean']:.1f} · Median: {refs['PM2.5']['median']:.1f}",
+                key="sl_pm25",
+            )
+            so2 = st.slider(
+                "SO₂ (μg/m³)", 0.0, 120.0, float(st.session_state["preset_vals"]["so2"]), 1.0,
+                help=f"Sulfur Dioksida · Rata-rata dataset: {refs['SO₂']['mean']:.1f} · Median: {refs['SO₂']['median']:.1f}",
+                key="sl_so2",
+            )
         with c2:
-            co = st.slider("CO", 0.0, 80.0, 15.0, 1.0, help="Karbon Monoksida")
-            o3 = st.slider("O₃", 0.0, 120.0, 22.0, 1.0, help="Ozon")
-            no2 = st.slider("NO₂", 0.0, 200.0, 25.0, 1.0, help="Nitrogen Dioksida")
+            co = st.slider(
+                "CO (μg/m³)", 0.0, 80.0, float(st.session_state["preset_vals"]["co"]), 1.0,
+                help=f"Karbon Monoksida · Rata-rata dataset: {refs['CO']['mean']:.1f} · Median: {refs['CO']['median']:.1f}",
+                key="sl_co",
+            )
+            o3 = st.slider(
+                "O₃ (μg/m³)", 0.0, 120.0, float(st.session_state["preset_vals"]["o3"]), 1.0,
+                help=f"Ozon · Rata-rata dataset: {refs['O₃']['mean']:.1f} · Median: {refs['O₃']['median']:.1f}",
+                key="sl_o3",
+            )
+            no2 = st.slider(
+                "NO₂ (μg/m³)", 0.0, 200.0, float(st.session_state["preset_vals"]["no2"]), 1.0,
+                help=f"Nitrogen Dioksida · Rata-rata dataset: {refs['NO₂']['mean']:.1f} · Median: {refs['NO₂']['median']:.1f}",
+                key="sl_no2",
+            )
 
         st.markdown("</div>", unsafe_allow_html=True)
 
-        # Quick preset buttons
+        # ── Preset & Reset buttons (Rule 6: easy reversal + Rule 2: usability) ──
         st.markdown("#### 💡 Preset Skenario")
-        pc1, pc2, pc3 = st.columns(3)
+        pc1, pc2, pc3, pc4 = st.columns(4)
         with pc1:
             if st.button("🟢 Udara Bersih", use_container_width=True):
-                st.session_state["preset"] = "baik"
+                st.session_state["preset_vals"] = PRESETS["baik"].copy()
+                st.toast("✅ Preset 'Udara Bersih' diterapkan", icon="🟢")
+                st.rerun()
         with pc2:
             if st.button("🟡 Udara Sedang", use_container_width=True):
-                st.session_state["preset"] = "sedang"
+                st.session_state["preset_vals"] = PRESETS["sedang"].copy()
+                st.toast("✅ Preset 'Udara Sedang' diterapkan", icon="🟡")
+                st.rerun()
         with pc3:
             if st.button("🔴 Udara Buruk", use_container_width=True):
-                st.session_state["preset"] = "tidaksehat"
+                st.session_state["preset_vals"] = PRESETS["tidaksehat"].copy()
+                st.toast("✅ Preset 'Udara Buruk' diterapkan", icon="🔴")
+                st.rerun()
+        with pc4:
+            if st.button("↺ Reset", use_container_width=True, help="Kembali ke nilai default"):
+                st.session_state["preset_vals"] = PRESETS["default"].copy()
+                st.toast("🔄 Slider direset ke default", icon="↺")
+                st.rerun()
 
-    # Predict
+    # ── Prediksi ──
     input_data = pd.DataFrame([{
         "pm_sepuluh": pm10, "pm_duakomalima": pm25, "sulfur_dioksida": so2,
         "karbon_monoksida": co, "ozon": o3, "nitrogen_dioksida": no2,
@@ -1168,12 +1330,24 @@ elif page == "🎯 Prediksi Interaktif":
 
     if "XGBoost" in model_choice:
         pred = models["xgb_best"].predict(input_data)[0]
+        # Confidence dari predict_proba (Rule 3: informative feedback)
+        try:
+            proba = models["xgb_best"].predict_proba(input_data)[0]
+            confidence = float(proba.max())
+        except Exception:
+            confidence = None
         model_used = "XGBoost"
     elif "Random Forest" in model_choice:
         pred = models["rf_best"].predict(input_data)[0]
+        try:
+            proba = models["rf_best"].predict_proba(input_data)[0]
+            confidence = float(proba.max())
+        except Exception:
+            confidence = None
         model_used = "Random Forest"
     else:
         pred = models["svm_best"].predict(data["scaler"].transform(input_data))[0]
+        confidence = None  # SVC tanpa probability=True tidak punya predict_proba
         model_used = "SVM"
 
     kategori = data["le"].inverse_transform([pred])[0]
@@ -1181,6 +1355,14 @@ elif page == "🎯 Prediksi Interaktif":
     with col_result:
         css_class = {"BAIK": "pred-baik", "SEDANG": "pred-sedang", "TIDAK SEHAT": "pred-tidaksehat"}
         emoji = {"BAIK": "🟢", "SEDANG": "🟡", "TIDAK SEHAT": "🔴"}
+
+        # ── Hasil prediksi + confidence (Rule 3: feedback) ──
+        conf_html = ""
+        if confidence is not None:
+            conf_html = f"""<div style="margin-top:6px; font-size:0.78rem; opacity:0.65;">
+                Tingkat keyakinan: <strong>{confidence:.1%}</strong>
+            </div>"""
+
         st.markdown(f"""
         <div class="prediction-result {css_class[kategori]}">
             <div style="font-size:3rem;">{emoji[kategori]}</div>
@@ -1188,10 +1370,11 @@ elif page == "🎯 Prediksi Interaktif":
             <div style="margin-top:8px; font-size:0.88rem; opacity:0.7;">
                 Diprediksi oleh <strong>{model_used}</strong>
             </div>
+            {conf_html}
         </div>
         """, unsafe_allow_html=True)
 
-        # Recommendation
+        # ── Rekomendasi aktivitas ──
         rekom_class = {"BAIK": "rekom-baik", "SEDANG": "rekom-sedang", "TIDAK SEHAT": "rekom-tidaksehat"}
         rekom_text = {
             "BAIK": """<strong>✅ Kualitas Udara Baik</strong><br>
@@ -1205,10 +1388,9 @@ elif page == "🎯 Prediksi Interaktif":
             {rekom_text[kategori]}
         </div>""", unsafe_allow_html=True)
 
-        # Input summary as radar
+        # ── Radar chart input (Rule 8: visual summary) ──
         labels = ["PM10", "PM2.5", "SO₂", "CO", "O₃", "NO₂"]
         values = [pm10, pm25, so2, co, o3, no2]
-        # Normalize to 0-100 scale for radar
         maxes = [200, 200, 120, 80, 120, 200]
         norm_vals = [v / m * 100 for v, m in zip(values, maxes)]
         norm_vals.append(norm_vals[0])
@@ -1235,6 +1417,7 @@ elif page == "🎯 Prediksi Interaktif":
 # PAGE: TENTANG
 # ════════════════════════════════════════════════════════════════
 elif page == "ℹ️ Tentang":
+    breadcrumb("ℹ️", "Tentang")
     st.markdown("""
     <div class="hero-container" style="background: linear-gradient(135deg, #1E3A5F 0%, #0A6847 100%);">
         <div class="hero-title">Tentang JakU</div>
@@ -1304,3 +1487,40 @@ elif page == "ℹ️ Tentang":
         </div>
     </div>
     """, unsafe_allow_html=True)
+
+    # ── 8 Golden Rules Mapping (Shneiderman) ──
+    st.markdown('<div class="section-header" style="margin-top:28px;">🏆 8 Golden Rules of Interface Design</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-desc">Setiap perubahan UI di dashboard ini dipetakan ke prinsip Shneiderman, sesuai standar evaluasi usability HCI.</div>', unsafe_allow_html=True)
+
+    golden_rules = [
+        ("1. Strive for Consistency",
+         "Palette warna, font (Plus Jakarta Sans), ikon, dan struktur KPI card konsisten di semua 6 halaman."),
+        ("2. Seek Universal Usability",
+         "Expander 'Cara menggunakan' di setiap halaman membantu pemula. Tooltip help (?) tersedia pada parameter teknis."),
+        ("3. Offer Informative Feedback",
+         "Toast notification muncul saat preset diklik. Tingkat keyakinan model (confidence) ditampilkan pada hasil prediksi."),
+        ("4. Design Dialogs to Yield Closure",
+         "Breadcrumb 'JakU › Halaman' di atas tiap halaman. Insight box di akhir tiap analisis sebagai kesimpulan."),
+        ("5. Prevent Errors",
+         "Slider dengan range nyata sesuai dataset ISPU. Tooltip menampilkan rata-rata dataset sebagai referensi."),
+        ("6. Permit Easy Reversal of Actions",
+         "Tombol Reset pada halaman Prediksi mengembalikan semua slider ke nilai default. Sidebar selalu accessible."),
+        ("7. Keep Users in Control",
+         "User memilih sendiri model, parameter, dan preset. Tidak ada modal atau popup yang mengganggu alur kerja."),
+        ("8. Reduce Short-Term Memory Load",
+         "Nilai slider real-time terlihat di label. Referensi mean/median dataset di tooltip tiap slider."),
+    ]
+
+    gc1, gc2 = st.columns(2)
+    for i, (rule, desc) in enumerate(golden_rules):
+        target_col = gc1 if i % 2 == 0 else gc2
+        with target_col:
+            st.markdown(f"""
+            <div class="info-card" style="padding:16px 18px; margin-bottom:10px;">
+                <h4 style="font-size:0.95rem; margin-bottom:6px;">{rule}</h4>
+                <p style="color:#6B8A73; line-height:1.6; font-size:0.82rem; margin:0;">{desc}</p>
+            </div>
+            """, unsafe_allow_html=True)
+
+    # ── Footer ──
+    app_footer()
