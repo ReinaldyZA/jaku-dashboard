@@ -1603,24 +1603,6 @@ elif page == "ℹ️ Tentang":
     st.markdown('<div class="section-header" style="margin-top:28px;">🏆 8 Golden Rules of Interface Design</div>', unsafe_allow_html=True)
     st.markdown('<div class="section-desc">Setiap perubahan UI di dashboard ini dipetakan ke prinsip Shneiderman, sesuai standar evaluasi usability HCI.</div>', unsafe_allow_html=True)
 
-    golden_rules = [
-        ("1. Strive for Consistency",
-         "Palette warna, font (Plus Jakarta Sans), ikon, dan struktur KPI card konsisten di semua 6 halaman."),
-        ("2. Seek Universal Usability",
-         "Expander 'Cara menggunakan' di setiap halaman membantu pemula. Tooltip help (?) tersedia pada parameter teknis."),
-        ("3. Offer Informative Feedback",
-         "Toast notification muncul saat preset diklik. Tingkat keyakinan model (confidence) ditampilkan pada hasil prediksi."),
-        ("4. Design Dialogs to Yield Closure",
-         "Breadcrumb 'JakU › Halaman' di atas tiap halaman. Insight box di akhir tiap analisis sebagai kesimpulan."),
-        ("5. Prevent Errors",
-         "Slider dengan range nyata sesuai dataset ISPU. Tooltip menampilkan rata-rata dataset sebagai referensi."),
-        ("6. Permit Easy Reversal of Actions",
-         "Tombol Reset pada halaman Prediksi mengembalikan semua slider ke nilai default. Sidebar selalu accessible."),
-        ("7. Keep Users in Control",
-         "User memilih sendiri model, parameter, dan preset. Tidak ada modal atau popup yang mengganggu alur kerja."),
-        ("8. Reduce Short-Term Memory Load",
-         "Nilai slider real-time terlihat di label. Referensi mean/median dataset di tooltip tiap slider."),
-    ]
 
     gc1, gc2 = st.columns(2)
     for i, (rule, desc) in enumerate(golden_rules):
