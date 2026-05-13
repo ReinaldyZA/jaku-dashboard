@@ -1430,7 +1430,7 @@ elif page == "🎯 Prediksi Interaktif":
         with pc4:
             if st.button("↺ Reset", use_container_width=True, help="Kembali ke nilai default"):
                 st.session_state["preset_vals"] = PRESETS["default"].copy()
-                st.toast("🔄 Slider direset ke default", icon="↺")
+                st.toast("🔄 Slider direset ke default", icon="🔄")
                 st.rerun()
 
     # ── Prediksi ──
