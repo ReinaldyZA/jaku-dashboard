@@ -1341,7 +1341,7 @@ elif page == "🎯 Prediksi Interaktif":
         "baik":        {"pm10": 25, "pm25": 30, "so2": 15, "co": 5,  "o3": 10, "no2": 15},
         "sedang":      {"pm10": 60, "pm25": 75, "so2": 40, "co": 18, "o3": 25, "no2": 35},
         "tidaksehat":  {"pm10": 120,"pm25": 130,"so2": 75, "co": 45, "o3": 65, "no2": 110},
-        "default":     {"pm10": 50, "pm25": 70, "so2": 35, "co": 15, "o3": 22, "no2": 25},
+        "default": {"pm10": 50, "pm25": 70, "so2": 35, "co": 15, "o3": 22, "no2": 25},
     }
 
     # ── Inisialisasi session_state (Rule 7: keep user in control) ──
