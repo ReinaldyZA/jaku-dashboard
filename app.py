@@ -360,8 +360,7 @@ POLUTAN_COLORS = px.colors.qualitative.Set2
 
 
 # ─── UCD HELPER FUNCTIONS ──────────────────────────────────────
-# Diterapkan untuk mendukung 8 Golden Rules of UI Design (Shneiderman)
-# dan prinsip User-Centered Design (Nielsen Usability Heuristics)
+# Diterapkan untuk mendukung prinsip User-Centered Design (Nielsen Usability Heuristics)
 
 def breadcrumb(icon, page_name):
     """Rule 4: Design dialogs to yield closure — selalu tunjukkan lokasi user."""
@@ -404,7 +403,7 @@ def app_footer():
     <hr style="border:none; border-top:1px solid rgba(10,104,71,0.08); margin:32px 0 16px 0;">
     <div style="text-align:center; font-size:0.72rem; color:#9CA3AF; padding:8px 0 16px 0; line-height:1.6;">
         <strong style="color:#6B8A73;">JakU Dashboard v1.0</strong> · Klasifikasi Kualitas Udara DKI Jakarta<br>
-        Dibangun dengan Streamlit · Metodologi CRISP-DM · Desain UCD & 8 Golden Rules
+        Dibangun dengan Streamlit · Metodologi CRISP-DM · Desain UCD
     </div>
     """, unsafe_allow_html=True)
 
@@ -1411,25 +1410,31 @@ elif page == "🎯 Prediksi Interaktif":
 
         # ── Preset & Reset buttons (Rule 6: easy reversal + Rule 2: usability) ──
         st.markdown("#### 💡 Preset Skenario")
+        def _apply_preset(preset_dict):
+            """Hapus slider keys dari session_state agar nilai preset benar-benar diterapkan."""
+            st.session_state["preset_vals"] = preset_dict.copy()
+            for k in ["sl_pm10", "sl_pm25", "sl_so2", "sl_co", "sl_o3", "sl_no2"]:
+                st.session_state.pop(k, None)
+
         pc1, pc2, pc3, pc4 = st.columns(4)
         with pc1:
             if st.button("🟢 Udara Bersih", use_container_width=True):
-                st.session_state["preset_vals"] = PRESETS["baik"].copy()
+                _apply_preset(PRESETS["baik"])
                 st.toast("✅ Preset 'Udara Bersih' diterapkan", icon="🟢")
                 st.rerun()
         with pc2:
             if st.button("🟡 Udara Sedang", use_container_width=True):
-                st.session_state["preset_vals"] = PRESETS["sedang"].copy()
+                _apply_preset(PRESETS["sedang"])
                 st.toast("✅ Preset 'Udara Sedang' diterapkan", icon="🟡")
                 st.rerun()
         with pc3:
             if st.button("🔴 Udara Buruk", use_container_width=True):
-                st.session_state["preset_vals"] = PRESETS["tidaksehat"].copy()
+                _apply_preset(PRESETS["tidaksehat"])
                 st.toast("✅ Preset 'Udara Buruk' diterapkan", icon="🔴")
                 st.rerun()
         with pc4:
             if st.button("↺ Reset", use_container_width=True, help="Kembali ke nilai default"):
-                st.session_state["preset_vals"] = PRESETS["default"].copy()
+                _apply_preset(PRESETS["default"])
                 st.toast("🔄 Slider direset ke default", icon="🔄")
                 st.rerun()
 
@@ -1598,40 +1603,6 @@ elif page == "ℹ️ Tentang":
         </div>
     </div>
     """, unsafe_allow_html=True)
-
-    # ── 8 Golden Rules Mapping (Shneiderman) ──
-    st.markdown('<div class="section-header" style="margin-top:28px;">🏆 8 Golden Rules of Interface Design</div>', unsafe_allow_html=True)
-    st.markdown('<div class="section-desc">Setiap perubahan UI di dashboard ini dipetakan ke prinsip Shneiderman, sesuai standar evaluasi usability HCI.</div>', unsafe_allow_html=True)
-
-    golden_rules = [
-        ("1. Strive for Consistency",
-         "Palette warna, font (Plus Jakarta Sans), ikon, dan struktur KPI card konsisten di semua 6 halaman."),
-        ("2. Seek Universal Usability",
-         "Expander 'Cara menggunakan' di setiap halaman membantu pemula. Tooltip help (?) tersedia pada parameter teknis."),
-        ("3. Offer Informative Feedback",
-         "Toast notification muncul saat preset diklik. Tingkat keyakinan model (confidence) ditampilkan pada hasil prediksi."),
-        ("4. Design Dialogs to Yield Closure",
-         "Breadcrumb 'JakU › Halaman' di atas tiap halaman. Insight box di akhir tiap analisis sebagai kesimpulan."),
-        ("5. Prevent Errors",
-         "Slider dengan range nyata sesuai dataset ISPU. Tooltip menampilkan rata-rata dataset sebagai referensi."),
-        ("6. Permit Easy Reversal of Actions",
-         "Tombol Reset pada halaman Prediksi mengembalikan semua slider ke nilai default. Sidebar selalu accessible."),
-        ("7. Keep Users in Control",
-         "User memilih sendiri model, parameter, dan preset. Tidak ada modal atau popup yang mengganggu alur kerja."),
-        ("8. Reduce Short-Term Memory Load",
-         "Nilai slider real-time terlihat di label. Referensi mean/median dataset di tooltip tiap slider."),
-    ]
-
-    gc1, gc2 = st.columns(2)
-    for i, (rule, desc) in enumerate(golden_rules):
-        target_col = gc1 if i % 2 == 0 else gc2
-        with target_col:
-            st.markdown(f"""
-            <div class="info-card" style="padding:16px 18px; margin-bottom:10px;">
-                <h4 style="font-size:0.95rem; margin-bottom:6px;">{rule}</h4>
-                <p style="color:#6B8A73; line-height:1.6; font-size:0.82rem; margin:0;">{desc}</p>
-            </div>
-            """, unsafe_allow_html=True)
 
     # ── Footer ──
     app_footer()
