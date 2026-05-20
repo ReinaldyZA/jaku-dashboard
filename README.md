@@ -59,7 +59,7 @@ Informasi penelitian: tujuan, dataset, metodologi, prinsip UCD, dan kategori ISP
 
 ## 📊 Dataset
 
-- **Sumber:** Jakarta Open Data ([data.jakarta.go.id](https://data.jakarta.go.id))
+- **Sumber:** Jakarta Open Data ([ https://satudata.jakarta.go.id/open-data/detail?kategori=dataset&page_url=data-indeks-standar-pencemar-udara-ispu-di-provinsi-dki-jakarta&data_no=1 ])
 - **Format:** CSV (semicolon-delimited)
 - **Jumlah Data Awal:** 3.350 baris
 - **Jumlah Data Final:** 3.057 baris (setelah cleaning dan outlier removal)
@@ -131,7 +131,7 @@ Proyek ini dikembangkan sebagai tugas akhir (skripsi) oleh mahasiswa Program Stu
 | Reinaldy Zulfananda Arkaan | 2602168740 |
 | Syafiq Ammar Muhadzdzib | 2602172946 |
 
-**Dosen Pembimbing:** Rezki Yunanda
+**Dosen Pembimbing:** Rezki Yunanda, S.Kom, M.Kom
 
 ---
 
